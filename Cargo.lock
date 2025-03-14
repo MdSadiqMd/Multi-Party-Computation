@@ -463,6 +463,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "multi-party-computation"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "console_error_panic_hook",
+ "tower-service",
+ "worker",
+ "worker-macros",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -673,17 +684,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "temp-worker"
-version = "0.1.0"
-dependencies = [
- "axum",
- "console_error_panic_hook",
- "tower-service",
- "worker",
- "worker-macros",
 ]
 
 [[package]]

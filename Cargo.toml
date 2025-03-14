@@ -1,5 +1,5 @@
 [package]
-name = "temp-worker"
+name = "multi-party-computation"
 version = "0.1.0"
 edition = "2021"
 authors = [ "Md.Sadiq <mohammadsadiq4950@gmail.com>" ]

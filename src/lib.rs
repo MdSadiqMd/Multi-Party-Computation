@@ -5,6 +5,7 @@ pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let router = Router::new();
     router
         .get_async("/", |_, _| async move { Response::ok("200") })
+        .post_async("/create", |_, _| async move { Response::ok("200") })
         .run(req, env)
         .await
 }

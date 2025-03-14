@@ -1,7 +1,7 @@
 use rand::{rngs::OsRng, Rng};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use thiserror::Error;
+use worker::console_log;
 
 const FIELD_SIZE: u8 = 255; // prime field size (GF(256))
 
@@ -220,32 +220,33 @@ pub fn reconstruct_secret(
     Ok(secret)
 }
 
-pub fn example_usage() {
+pub fn _example_usage() {
     let secret = b"This is a secret message";
     let threshold = 3;
     let num_shares = 5;
 
     match split_secret(secret, threshold, num_shares) {
         Ok(shamir_secret) => {
-            println!(
+            console_log!(
                 "Secret split into {} shares, threshold: {}",
-                num_shares, threshold
+                num_shares,
+                threshold
             );
             let subset_shares = shamir_secret.shares[0..threshold as usize].to_vec();
             match reconstruct_secret(&subset_shares, secret.len()) {
                 Ok(reconstructed) => {
-                    println!(
+                    console_log!(
                         "Reconstructed secret: {}",
                         String::from_utf8_lossy(&reconstructed)
                     );
                 }
                 Err(e) => {
-                    println!("Failed to reconstruct: {:?}", e);
+                    console_log!("Failed to reconstruct: {:?}", e);
                 }
             }
         }
         Err(e) => {
-            println!("Failed to split secret: {:?}", e);
+            console_log!("Failed to split secret: {:?}", e);
         }
     }
 }

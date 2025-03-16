@@ -5,6 +5,12 @@ pub enum MpcError {
     #[error("Invalid metadata configuration")]
     InvalidMetadata,
 
+    #[error("Invalid secret")]
+    InvalidSecret,
+
+    #[error("Invalid share")]
+    InvalidShare,
+
     #[error("Storage error: {0}")]
     StorageError(String),
 

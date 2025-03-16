@@ -27,4 +27,7 @@ rand = "0.8.5"
 thiserror = "1.0.40"
 getrandom = { version = "0.2", features = ["js"] }
 solana-sdk = "1.16.0"
-threshold-secret-sharing = "0.3"
+threshold-secret-sharing = "0.2.2"
+bs58 = "0.4.0"
+num-bigint = "0.4.3"
+num-traits = "0.2"

@@ -1,7 +1,9 @@
 use crate::error::{MpcError, Result};
 use worker::*;
 
-pub async fn store(env: &Env, data: &str) -> Result<String> {
+pub async fn store(env: &Env, region: &str, data: &str) -> Result<String> {
+    console_log!("Storing data in region: {}", region);
+
     let bucket = env
         .bucket("SHARES_BUCKET")
         .map_err(|e| MpcError::ConfigError(format!("Failed to get R2 bucket: {}", e)))?;

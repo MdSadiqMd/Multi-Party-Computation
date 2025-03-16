@@ -35,6 +35,6 @@ pub struct StorageLocation {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum CloudProvider {
     Aws,
-    DigitalOcean,
-    Azure,
+    Cloudflare,
+    Memory,
 }

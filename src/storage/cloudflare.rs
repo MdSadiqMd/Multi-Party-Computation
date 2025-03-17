@@ -1,21 +1,43 @@
 use crate::error::{MpcError, Result};
 use worker::*;
 
-pub async fn store(env: &Env, region: &str, data: &str) -> Result<String> {
-    console_log!("Storing data in region: {}", region);
-
+pub async fn retrieve(env: &Env, pubkey: &str) -> Result<Vec<String>> {
     let bucket = env
         .bucket("SHARES_BUCKET")
         .map_err(|e| MpcError::ConfigError(format!("Failed to get R2 bucket: {}", e)))?;
 
-    let object_key = format!("shares/{}.json", uuid::Uuid::new_v4());
+    let prefix = format!("shares/{}/", pubkey);
+    let mut shares = Vec::new();
 
-    let data_bytes = data.as_bytes().to_vec();
-    let _put_result = bucket
-        .put(&object_key, data_bytes)
+    let list = bucket
+        .list()
+        .prefix(&prefix)
         .execute()
         .await
-        .map_err(|e| MpcError::StorageError(format!("Failed to store in R2: {}", e)))?;
+        .map_err(|e| MpcError::StorageError(format!("Failed to list objects: {}", e)))?;
 
-    Ok(object_key)
+    for object in list.objects() {
+        let key = object.key();
+        let data = bucket
+            .get(&key)
+            .execute()
+            .await
+            .map_err(|e| MpcError::StorageError(format!("Failed to get object: {}", e)))?;
+
+        let data =
+            data.ok_or_else(|| MpcError::StorageError("Failed to get object data".into()))?;
+        let bytes = data
+            .body()
+            .ok_or_else(|| MpcError::StorageError("Failed to get object body".into()))?
+            .bytes()
+            .await
+            .map_err(|e| MpcError::StorageError(format!("Failed to read object body: {}", e)))?;
+
+        let share = String::from_utf8(bytes).map_err(|e| {
+            MpcError::StorageError(format!("Failed to convert bytes to string: {}", e))
+        })?;
+        shares.push(share);
+    }
+
+    Ok(shares)
 }

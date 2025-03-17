@@ -14,24 +14,18 @@ impl MemoryStorage {
         }
     }
 
-    pub async fn store(&self, _region: &str, data: &str) -> Result<String> {
-        let key = uuid::Uuid::new_v4().to_string();
-        let mut storage = self
-            .storage
-            .lock()
-            .map_err(|e| MpcError::StorageError(format!("Failed to acquire lock: {}", e)))?;
-        storage.insert(key.clone(), data.to_string());
-        Ok(key)
-    }
-
-    pub async fn retrieve(&self, key: &str) -> Result<String> {
+    pub async fn retrieve(&self, key: &str) -> Result<Vec<String>> {
         let storage = self
             .storage
             .lock()
             .map_err(|e| MpcError::StorageError(format!("Failed to acquire lock: {}", e)))?;
-        storage
-            .get(key)
-            .cloned()
-            .ok_or_else(|| MpcError::StorageError("Key not found".into()))
+
+        let shares = storage
+            .iter()
+            .filter(|(k, _)| k.starts_with(&format!("shares/{}/", key)))
+            .map(|(_, v)| v.clone())
+            .collect();
+
+        Ok(shares)
     }
 }

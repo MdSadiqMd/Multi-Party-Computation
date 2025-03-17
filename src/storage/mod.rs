@@ -21,13 +21,15 @@ pub async fn distribute_shares(
         let provider = providers[index % providers.len()];
 
         let region = select_region(provider, metadata)?;
-        let location = store_share(provider, env, region.clone(), share_base64).await?;
+        let stored_shares = store_share(provider, env, region.clone(), share_base64).await?;
 
-        locations.push(StorageLocation {
-            provider,
-            region,
-            identifier: location,
-        });
+        for stored_share in stored_shares {
+            locations.push(StorageLocation {
+                provider,
+                region: region.clone(),
+                identifier: stored_share,
+            });
+        }
     }
 
     Ok(locations)
@@ -61,11 +63,11 @@ pub async fn store_share(
     provider: CloudProvider,
     env: &Env,
     region: String,
-    share: String,
-) -> Result<String> {
+    _share: String,
+) -> Result<Vec<String>> {
     match provider {
-        CloudProvider::Aws => aws::store(&region, &share).await,
-        CloudProvider::Cloudflare => cloudflare::store(env, &region, &share).await,
-        CloudProvider::Memory => memory::MemoryStorage::new().store(&region, &share).await,
+        CloudProvider::Aws => aws::retrieve(&region).await,
+        CloudProvider::Cloudflare => cloudflare::retrieve(env, &region).await,
+        CloudProvider::Memory => memory::MemoryStorage::new().retrieve(&region).await,
     }
 }

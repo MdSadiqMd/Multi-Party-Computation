@@ -1,12 +1,11 @@
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::{get_object::GetObjectError, list_objects_v2::ListObjectsV2Error};
-use axum::http;
 use axum::{
     response::{IntoResponse, Response},
     Json,
 };
 use http::StatusCode;
-use serde_json::json;
+use serde_json::{json, Error as JsonError};
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
@@ -51,6 +50,12 @@ impl From<SdkError<ListObjectsV2Error>> for MpcError {
 impl From<SdkError<GetObjectError>> for MpcError {
     fn from(err: SdkError<GetObjectError>) -> Self {
         MpcError::AwsS3Error(format!("GetObjectError: {}", err))
+    }
+}
+
+impl From<JsonError> for MpcError {
+    fn from(err: JsonError) -> Self {
+        MpcError::CryptoError(format!("JSON serialization error: {}", err))
     }
 }
 

@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use http::StatusCode;
-use serde_json::{json, Error as JsonError};
+use serde_json::json;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
@@ -53,9 +53,9 @@ impl From<SdkError<GetObjectError>> for MpcError {
     }
 }
 
-impl From<JsonError> for MpcError {
-    fn from(err: JsonError) -> Self {
-        MpcError::CryptoError(format!("JSON serialization error: {}", err))
+impl From<worker::Error> for MpcError {
+    fn from(err: worker::Error) -> Self {
+        MpcError::StorageError(format!("Worker error: {}", err))
     }
 }
 
@@ -73,10 +73,7 @@ impl IntoResponse for MpcError {
             MpcError::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
-        let body = Json(json!({
-            "error": self.to_string(),
-        }));
-
+        let body = Json(json!({ "error": self.to_string() }));
         (status, body).into_response()
     }
 }

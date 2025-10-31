@@ -1,10 +1,13 @@
 pub mod shamir;
 pub mod solana;
 
-use crate::{aws, cloudflare, error::Result, memory, meta::*, storage, MpcError};
+use crate::{
+    error::{MpcError, Result},
+    meta::*,
+    storage,
+};
 use sha2::{Digest, Sha256};
-use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Signature;
+use solana_sdk::{pubkey::Pubkey, signature::Signature};
 use std::str::FromStr;
 use worker::Env;
 
@@ -30,10 +33,10 @@ pub fn validate_signature(request: &UserRequest) -> Result<()> {
 
     let mut hasher = Sha256::new();
     hasher.update(&request.encrypted_private_key);
-    hasher.update(serde_json::to_vec(&request.metadata)?);
+    hasher.update(serde_json::to_vec(&request.metadata).unwrap());
     let message_hash = hasher.finalize();
 
-    if !signature.verify(&pubkey.to_bytes(), &message_hash) {
+    if !signature.verify(pubkey.as_ref(), &message_hash) {
         return Err(MpcError::CryptoError("Invalid signature".into()));
     }
 
@@ -41,27 +44,28 @@ pub fn validate_signature(request: &UserRequest) -> Result<()> {
 }
 
 pub async fn retrieve_shares(env: &Env, pubkey: &str) -> Result<Vec<String>> {
+    let bucket = env.bucket("SHARES_BUCKET")?;
+    let list = bucket
+        .list()
+        .prefix(&format!("shares/{}/", pubkey))
+        .execute()
+        .await?;
+
     let mut shares = Vec::new();
+    for object in list.objects() {
+        let value = bucket
+            .get(object.key())
+            .execute()
+            .await?
+            .ok_or(MpcError::StorageError("Missing object".into()))?;
 
-    if let Ok(aws_shares) = aws::retrieve(pubkey).await {
-        shares.extend(aws_shares);
+        let body = value
+            .body()
+            .ok_or(MpcError::StorageError("Missing body".into()))?;
+        let bytes = body.bytes().await?;
+        let text = String::from_utf8(bytes)?;
+        shares.push(text);
     }
-
-    if let Ok(cf_shares) = cloudflare::retrieve(env, pubkey).await {
-        shares.extend(cf_shares);
-    }
-
-    let memory_storage = memory::MemoryStorage::new();
-    if let Ok(mem_shares) = memory_storage.retrieve(pubkey).await {
-        shares.extend(mem_shares);
-    }
-
-    if shares.is_empty() {
-        return Err(MpcError::StorageError(
-            "No shares found for the given public key".into(),
-        ));
-    }
-
     Ok(shares)
 }
 

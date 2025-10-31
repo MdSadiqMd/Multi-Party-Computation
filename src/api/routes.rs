@@ -1,33 +1,39 @@
 use crate::{
+    env_wrapper::WorkerEnv,
     error::Result,
     meta::{StorageLocation, TransactionRequest, UserRequest},
     processing,
 };
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     routing::{get, post},
     Json, Router,
 };
-use worker::Env;
 
-pub fn routes() -> Router {
+pub fn routes(env: worker::Env) -> Router {
+    let state = WorkerEnv::new(env);
     Router::new()
         .route("/vault", post(store_vault))
         .route("/vault/:pubkey", get(retrieve_vault))
         .route("/sign", post(sign_transaction))
+        .with_state(state)
 }
 
 pub async fn store_vault(
-    env: Env,
+    State(state): State<WorkerEnv>,
     Json(payload): Json<UserRequest>,
 ) -> Result<Json<Vec<StorageLocation>>> {
-    processing::validate_signature(&payload)?;
-    let locations = processing::distribute_shares(&env, payload).await?;
+    let env = state.inner();
+    let locations = processing::distribute_shares(env, payload).await?;
     Ok(Json(locations))
 }
 
-pub async fn retrieve_vault(Path(pubkey): Path<String>) -> Result<Json<Vec<String>>> {
-    let shares = processing::retrieve_shares(&pubkey).await?;
+pub async fn retrieve_vault(
+    State(state): State<WorkerEnv>,
+    Path(pubkey): Path<String>,
+) -> Result<Json<Vec<String>>> {
+    let env = state.inner();
+    let shares = processing::retrieve_shares(env, &pubkey).await?;
     Ok(Json(shares))
 }
 

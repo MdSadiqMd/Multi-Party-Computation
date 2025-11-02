@@ -14,6 +14,11 @@ wasm-opt = false
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+default = []
+# blockchain feature removed - incompatible with core crypto versions
+# Create a separate crate for blockchain integration if needed
+
 [dependencies]
 # Web framework
 worker = { version = "0.5.0", features = ['http'] }
@@ -39,17 +44,16 @@ hex = "0.4"
 bs58 = "0.5"
 
 # Cryptography
-curve25519-dalek = { version = "4.1", features = ["serde"] }
-ed25519-dalek = { version = "2.1", features = ["serde"] }
-x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+curve25519-dalek = { version = "3.2.1", features = ["serde"] }
+ed25519-dalek = { version = "1.0.1", features = ["serde"] }
 sha2 = "0.10"
 sha3 = "0.10"
 blake3 = "1.5"
-chacha20poly1305 = "0.10"
-aes-gcm = "0.10"
+chacha20poly1305 = "0.9"  # Compatible with zeroize 1.3
+aes-gcm = "0.9"  # Compatible with zeroize 1.3
 argon2 = "0.5"
 scrypt = "0.11"
-zeroize = { version = "1.7", features = ["derive"] }
+zeroize = "1.3"  # Compatible with curve25519-dalek 3.2.1
 
 # MPC and Secret Sharing
 threshold-secret-sharing = "0.2.2"
@@ -59,18 +63,22 @@ num-integer = "0.1"
 ff = "0.13"
 group = "0.13"
 
-# Blockchain
-solana-sdk = "1.16.0"
-ethers = "2.0"
-web3 = "0.19"
+# Blockchain dependencies removed due to version conflicts
+# To add blockchain support, create a separate workspace crate
+# that depends on this core MPC library
+#
+# solana-sdk = { version = "1.16.0", optional = true }
+# ethers = { version = "2.0", optional = true }
+# web3 = { version = "0.19", optional = true }
 
 # Storage
 aws-sdk-s3 = "0.28"
 aws-sdk-kms = "0.28"
 aws-config = "0.55.3"
-aws-sdk-dynamodb = "0.28"
-redis = { version = "0.23", features = ["tokio-comp", "connection-manager"] }
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "sqlite", "json", "uuid"] }
+# Optional database dependencies (not used in core MPC)
+# aws-sdk-dynamodb = "0.28"
+# redis = { version = "0.23", features = ["tokio-comp", "connection-manager"] }
+# sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "sqlite", "json", "uuid"] }
 
 # Error handling & Logging
 thiserror = "1.0.40"
@@ -78,18 +86,23 @@ anyhow = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
-opentelemetry = "0.21"
-opentelemetry-jaeger = "0.20"
+# Optional telemetry (not used in core MPC)
+# opentelemetry = "0.21"
+# opentelemetry-jaeger = "0.20"
 
 # Utilities
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-rand = { version = "0.8.5", features = ["std_rng"] }
+rand = { version = "0.7", features = ["std"] }  # For curve25519-dalek 3.2.1 (uses rand_core 0.5)
+rand_core = "0.5"  # For curve25519-dalek 3.2.1  
+rand08 = { package = "rand", version = "0.8", features = ["std", "std_rng"] }  # For num-bigint
 getrandom = { version = "0.2", features = ["js"] }
 console_error_panic_hook = { version = "0.1.1" }
 once_cell = "1.19"
 parking_lot = "0.12"
 dashmap = "5.5"
+serde-big-array = "0.5"  # For serializing large arrays like [u8; 64]
+ed25519 = "1.5"  # For signing
 
 [dev-dependencies]
 criterion = "0.5"
